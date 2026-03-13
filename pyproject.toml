@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-google-classroom"
+version = "0.1.0"
+description = "An integration package connecting Google Classroom and LangChain"
+license = {text = "MIT"}
+readme = "README.md"
+authors = [
+    {name = "Nishchal Chandel"},
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Education",
+]
+keywords = ["langchain", "google-classroom", "document-loader", "rag", "education"]
+dependencies = [
+    "langchain-core>=0.3.0,<1.0.0",
+    "google-api-python-client>=2.100.0,<3.0.0",
+    "google-auth>=2.25.0,<3.0.0",
+    "google-auth-oauthlib>=1.2.0,<2.0.0",
+    "google-auth-httplib2>=0.2.0,<1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ayanokojix21/langchain-google-classroom"
+Source = "https://github.com/ayanokojix21/langchain-google-classroom"
+Documentation = "https://github.com/ayanokojix21/langchain-google-classroom#readme"
+
+[project.optional-dependencies]
+parsers = [
+    "pypdf>=4.0.0,<5.0.0",
+    "python-docx>=1.0.0,<2.0.0",
+]
+test = [
+    "pytest>=7.3.0,<10.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-asyncio>=0.21.1,<2.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+]
+lint = [
+    "ruff>=0.5.0,<1",
+]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+]
+dev = [
+    "pypdf>=4.0.0,<5.0.0",
+    "python-docx>=1.0.0,<2.0.0",
+    "pytest>=7.3.0,<10.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "ruff>=0.5.0,<1",
+    "mypy>=1.10.0,<2.0.0",
+]
+
+[tool.ruff]
+fix = true
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # isort
+    "T",  # flake8-print
+]
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+ignore_missing_imports = "True"
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "*/site-packages/*",
+    "*/.venv/*",
+    "*/venv/*",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
