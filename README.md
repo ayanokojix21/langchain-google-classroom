@@ -100,20 +100,26 @@ Install optional dependencies for this example as needed (`langchain-text-splitt
 
 ## 🔐 Authentication
 
-### Service Account (recommended for production)
+Google Classroom APIs require authentication. You can use either **OAuth 2.0 Client Secrets** (best for local testing / individual users) or a **Service Account** (best for automated CI/CD and production backend servers).
 
-```python
-loader = GoogleClassroomLoader(
-    service_account_file="service_account.json",
-)
-```
+### 1. OAuth User Credentials (Recommended for developers/testing)
 
-### OAuth User Credentials
+This is the easiest way to start. When you run this the first time, your browser will open asking you to log in with your Google Account, and it will generate a `token.json` for all future requests.
 
 ```python
 loader = GoogleClassroomLoader(
     client_secrets_file="credentials.json",
     token_file="token.json",
+)
+```
+
+### 2. Service Account (Recommended for production/servers)
+
+Service accounts do not require human interaction. However, please note that Service Accounts act as "bot users" and cannot see your personal Google Classroom courses unless your Google Workspace Administrator explicitly grants them "Domain-Wide Delegation" for classroom scopes.
+
+```python
+loader = GoogleClassroomLoader(
+    service_account_file="service_account.json",
 )
 ```
 
