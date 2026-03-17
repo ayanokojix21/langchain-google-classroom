@@ -1,4 +1,9 @@
-"""Basic usage example for langchain-google-classroom."""
+"""Example usage of langchain-google-classroom.
+
+Run:
+
+    python examples/basic_usage.py
+"""
 
 from langchain_google_classroom import GoogleClassroomLoader
 
@@ -12,6 +17,12 @@ def main() -> None:
         token_file="token.json",
     )
     docs = loader.load()
+    if not docs:
+        print(  # noqa: T201
+            "No documents loaded. Verify credentials, scopes, and course visibility."
+        )
+        return
+
     print(f"Loaded {len(docs)} documents")  # noqa: T201
 
     for doc in docs[:5]:
