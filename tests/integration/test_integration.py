@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from io import BytesIO
+from typing import TypedDict
 from unittest.mock import MagicMock
 
 import pytest
@@ -333,7 +334,12 @@ _HAS_CREDENTIALS = os.path.exists("service_account.json") or os.path.exists(
 )
 
 
-def _live_auth_kwargs() -> dict[str, str]:
+class _LiveAuthKwargs(TypedDict, total=False):
+    service_account_file: str
+    token_file: str
+
+
+def _live_auth_kwargs() -> _LiveAuthKwargs:
     """Build auth kwargs for live integration tests.
 
     Prefer service account credentials when available. This avoids

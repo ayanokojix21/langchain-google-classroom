@@ -37,7 +37,7 @@ jobs:
       - name: Lint with ruff
         run: ruff check .
       - name: Type check with mypy
-        run: mypy langchain_google_classroom
+        run: mypy .
 
   test:
     runs-on: ubuntu-latest
