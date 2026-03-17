@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.documents import Document
 
@@ -11,12 +11,18 @@ from langchain_google_classroom.normalizer import normalize
 
 logger = logging.getLogger(__name__)
 
+# Type alias for raw Classroom API response objects
+ClassroomObject = Dict[str, Any]
+
+# Source identifier for all LangChain Document metadata
+SOURCE = "google_classroom"
+
 # ---------------------------------------------------------------------------
 # Metadata helpers
 # ---------------------------------------------------------------------------
 
 
-def build_course_meta(course: Dict[str, Any]) -> Dict[str, Any]:
+def build_course_meta(course: ClassroomObject) -> Dict[str, Any]:
     """Extract reusable metadata from a course dict.
 
     Args:
@@ -31,7 +37,7 @@ def build_course_meta(course: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _format_due_date(item: Dict[str, Any]) -> Optional[str]:
+def _format_due_date(item: ClassroomObject) -> Optional[str]:
     """Build an ISO-style due-date string from *dueDate* and *dueTime* fields.
 
     Args:
@@ -65,7 +71,7 @@ def _format_due_date(item: Dict[str, Any]) -> Optional[str]:
 
 
 def build_from_course_work(
-    item: Dict[str, Any],
+    item: ClassroomObject,
     course_meta: Dict[str, Any],
 ) -> Document:
     """Convert a courseWork dict into a :class:`Document`.
@@ -88,7 +94,7 @@ def build_from_course_work(
     page_content = normalize("\n".join(parts))
 
     metadata: Dict[str, Any] = {
-        "source": "google_classroom",
+        "source": SOURCE,
         **course_meta,
         "content_type": "assignment",
         "title": title,
@@ -111,7 +117,7 @@ def build_from_course_work(
 
 
 def build_from_announcement(
-    item: Dict[str, Any],
+    item: ClassroomObject,
     course_meta: Dict[str, Any],
 ) -> Document:
     """Convert an announcement dict into a :class:`Document`.
@@ -124,13 +130,17 @@ def build_from_announcement(
         A LangChain ``Document`` with announcement content and metadata.
     """
     text = item.get("text", "")
-    # Use first 80 chars as the title
-    title = text[:80].strip() if text else "Untitled Announcement"
+    # Use first 80 chars as the title, cleaning newlines for safer titles
+    title = (
+        text.replace("\n", " ").replace("\r", "")[:80].strip()
+        if text
+        else "Untitled Announcement"
+    )
 
     page_content = normalize(f"Announcement: {text}")
 
     metadata: Dict[str, Any] = {
-        "source": "google_classroom",
+        "source": SOURCE,
         **course_meta,
         "content_type": "announcement",
         "title": title,
@@ -145,7 +155,7 @@ def build_from_announcement(
 
 
 def build_from_material(
-    item: Dict[str, Any],
+    item: ClassroomObject,
     course_meta: Dict[str, Any],
 ) -> Document:
     """Convert a courseWorkMaterial dict into a :class:`Document`.
@@ -167,7 +177,7 @@ def build_from_material(
     page_content = normalize("\n".join(parts))
 
     metadata: Dict[str, Any] = {
-        "source": "google_classroom",
+        "source": SOURCE,
         **course_meta,
         "content_type": "material",
         "title": title,
@@ -176,6 +186,57 @@ def build_from_material(
         "updated_time": item.get("updateTime", ""),
         "alternate_link": item.get("alternateLink", ""),
         "state": item.get("state", ""),
+    }
+
+    return Document(page_content=page_content, metadata=metadata)
+
+
+def build_from_attachment(
+    file_id: str,
+    title: str,
+    mime_type: str,
+    source_url: str,
+    original_mime_type: str,
+    parsed_text: str,
+    parent_item: ClassroomObject,
+    course_meta: Dict[str, Any],
+    content_type: str,
+) -> Document:
+    """Build a :class:`Document` from a resolved and parsed Drive attachment.
+
+    Args:
+        file_id: Google Drive file ID.
+        title: File name.
+        mime_type: MIME type of the downloaded/exported content.
+        source_url: Web link to the file.
+        original_mime_type: Original MIME type on Drive.
+        parsed_text: Text extracted from the file by a parser.
+        parent_item: The parent courseWork / announcement / material dict.
+        course_meta: Dict with ``course_id`` and ``course_name``.
+        content_type: Parent content type (``"assignment"``, ``"announcement"``,
+            or ``"material"``).
+
+    Returns:
+        A LangChain ``Document`` with attachment content and metadata.
+    """
+    parent_text = parent_item.get("text", "").replace("\n", " ").replace("\r", "")
+    parent_title = parent_item.get("title") or parent_text[:80].strip()
+
+    page_content = normalize(parsed_text)
+
+    metadata: Dict[str, Any] = {
+        "source": SOURCE,
+        **course_meta,
+        "content_type": f"{content_type}_attachment",
+        "title": title,
+        "item_id": parent_item.get("id", ""),
+        "parent_title": parent_title,
+        "file_id": file_id,
+        "mime_type": original_mime_type,
+        "attachment_url": source_url,
+        "created_time": parent_item.get("creationTime", ""),
+        "updated_time": parent_item.get("updateTime", ""),
+        "alternate_link": parent_item.get("alternateLink", ""),
     }
 
     return Document(page_content=page_content, metadata=metadata)
