@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-import pytest
 from langchain_core.documents import Document
 
 from langchain_google_classroom.document_builder import (
     _format_due_date,
     build_course_meta,
     build_from_announcement,
+    build_from_attachment,
     build_from_course_work,
     build_from_material,
 )
@@ -119,6 +119,23 @@ class TestBuildFromCourseWork:
         doc = build_from_course_work(item, COURSE_META)
         assert "due_date" not in doc.metadata
 
+    def test_assignment_title_fallback(self) -> None:
+        item = {"id": "cw4"}
+        doc = build_from_course_work(item, COURSE_META)
+        assert doc.metadata["title"] == "Untitled Assignment"
+        assert doc.page_content.strip() == "Assignment: Untitled Assignment"
+
+    def test_assignment_content_normalized(self) -> None:
+        item = {
+            "id": "cw5",
+            "title": "Normalization Test",
+            "description": "Line 1\r\n\r\n\r\nLine 2\x00",
+        }
+        doc = build_from_course_work(item, COURSE_META)
+        assert "\r" not in doc.page_content
+        assert "\x00" not in doc.page_content
+        assert "\n\n\n" not in doc.page_content
+
 
 # ---------------------------------------------------------------------------
 # Tests — build_from_announcement
@@ -185,3 +202,77 @@ class TestBuildFromMaterial:
         item = {"id": "mat2", "title": "Slides"}
         doc = build_from_material(item, COURSE_META)
         assert doc.page_content.strip() == "Material: Slides"
+
+    def test_material_title_fallback(self) -> None:
+        item = {"id": "mat3"}
+        doc = build_from_material(item, COURSE_META)
+        assert doc.metadata["title"] == "Untitled Material"
+        assert doc.page_content.strip() == "Material: Untitled Material"
+
+
+# ---------------------------------------------------------------------------
+# Tests — build_from_attachment
+# ---------------------------------------------------------------------------
+
+
+class TestBuildFromAttachment:
+    """Tests for build_from_attachment."""
+
+    def test_basic_attachment(self) -> None:
+        parent_item = {
+            "id": "cw_attach_1",
+            "title": "Homework With File",
+            "creationTime": "2024-02-01T10:00:00Z",
+            "updateTime": "2024-02-01T11:00:00Z",
+            "alternateLink": "https://classroom.google.com/attach",
+        }
+
+        doc = build_from_attachment(
+            file_id="file123",
+            title="instructions.pdf",
+            mime_type="application/pdf",
+            source_url="https://drive.google.com/file/d/file123/view",
+            original_mime_type="application/pdf",
+            parsed_text="Read the attached instructions.",
+            parent_item=parent_item,
+            course_meta=COURSE_META,
+            content_type="assignment",
+        )
+
+        assert isinstance(doc, Document)
+        assert doc.page_content == "Read the attached instructions."
+        assert doc.metadata["content_type"] == "assignment_attachment"
+        assert doc.metadata["title"] == "instructions.pdf"
+        assert doc.metadata["file_id"] == "file123"
+        assert doc.metadata["parent_title"] == "Homework With File"
+        assert doc.metadata["mime_type"] == "application/pdf"
+        assert (
+            doc.metadata["attachment_url"]
+            == "https://drive.google.com/file/d/file123/view"
+        )
+
+    def test_attachment_parent_title_fallback_from_text(self) -> None:
+        parent_item = {
+            "id": "ann_attach_1",
+            "text": "Important announcement with a linked file",
+        }
+
+        doc = build_from_attachment(
+            file_id="file456",
+            title="notes.txt",
+            mime_type="text/plain",
+            source_url="https://drive.google.com/file/d/file456/view",
+            original_mime_type="text/plain",
+            parsed_text="Raw\r\n\r\n\r\nText\x00",
+            parent_item=parent_item,
+            course_meta=COURSE_META,
+            content_type="announcement",
+        )
+
+        assert (
+            doc.metadata["parent_title"] == "Important announcement with a linked file"
+        )
+        assert doc.metadata["content_type"] == "announcement_attachment"
+        assert "\r" not in doc.page_content
+        assert "\x00" not in doc.page_content
+        assert "\n\n\n" not in doc.page_content

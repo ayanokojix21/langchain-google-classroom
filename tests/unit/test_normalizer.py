@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from langchain_google_classroom.normalizer import normalize
 
 
