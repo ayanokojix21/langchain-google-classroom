@@ -5,9 +5,15 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
-from langchain_google_classroom._utilities import _import_googleapiclient_build
+from langchain_google_classroom._utilities import (
+    _import_googleapiclient_build,
+    execute_with_retry,
+)
 
 logger = logging.getLogger(__name__)
+
+# Type alias for raw Classroom API response objects
+ClassroomObject = Dict[str, Any]
 
 
 class ClassroomAPIFetcher:
@@ -34,7 +40,7 @@ class ClassroomAPIFetcher:
     def list_courses(
         self,
         course_ids: Optional[List[str]] = None,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[ClassroomObject]:
         """Yield course dicts.
 
         If *course_ids* is provided each course is fetched individually via
@@ -47,32 +53,28 @@ class ClassroomAPIFetcher:
         Yields:
             Raw course dict from the Classroom API.
         """
+        courses = self._service.courses()
         if course_ids:
             for course_id in course_ids:
                 try:
-                    course = (
-                        self._service.courses()
-                        .get(id=course_id)
-                        .execute()
-                    )
+                    request = courses.get(id=course_id)
+                    course = execute_with_retry(request)
                     yield course
                 except Exception as exc:
-                    logger.warning(
-                        "Failed to fetch course %s: %s", course_id, exc
-                    )
+                    logger.warning("Failed to fetch course %s: %s", course_id, exc)
         else:
-            request = self._service.courses().list(pageSize=100)
+            request = courses.list(pageSize=100)
             while request is not None:
-                response = request.execute()
+                response = execute_with_retry(request)
                 for course in response.get("courses", []):
                     yield course
-                request = self._service.courses().list_next(request, response)
+                request = courses.list_next(request, response)
 
     # ------------------------------------------------------------------
     # CourseWork (assignments)
     # ------------------------------------------------------------------
 
-    def list_course_work(self, course_id: str) -> Iterator[Dict[str, Any]]:
+    def list_course_work(self, course_id: str) -> Iterator[ClassroomObject]:
         """Yield courseWork dicts for *course_id*.
 
         Args:
@@ -82,20 +84,13 @@ class ClassroomAPIFetcher:
             Raw courseWork dict.
         """
         try:
-            request = (
-                self._service.courses()
-                .courseWork()
-                .list(courseId=course_id, pageSize=100)
-            )
+            course_work = self._service.courses().courseWork()
+            request = course_work.list(courseId=course_id, pageSize=100)
             while request is not None:
-                response = request.execute()
+                response = execute_with_retry(request)
                 for item in response.get("courseWork", []):
                     yield item
-                request = (
-                    self._service.courses()
-                    .courseWork()
-                    .list_next(request, response)
-                )
+                request = course_work.list_next(request, response)
         except Exception as exc:
             logger.warning(
                 "Failed to fetch courseWork for course %s: %s",
@@ -107,7 +102,7 @@ class ClassroomAPIFetcher:
     # Announcements
     # ------------------------------------------------------------------
 
-    def list_announcements(self, course_id: str) -> Iterator[Dict[str, Any]]:
+    def list_announcements(self, course_id: str) -> Iterator[ClassroomObject]:
         """Yield announcement dicts for *course_id*.
 
         Args:
@@ -117,20 +112,13 @@ class ClassroomAPIFetcher:
             Raw announcement dict.
         """
         try:
-            request = (
-                self._service.courses()
-                .announcements()
-                .list(courseId=course_id, pageSize=100)
-            )
+            announcements = self._service.courses().announcements()
+            request = announcements.list(courseId=course_id, pageSize=100)
             while request is not None:
-                response = request.execute()
+                response = execute_with_retry(request)
                 for item in response.get("announcements", []):
                     yield item
-                request = (
-                    self._service.courses()
-                    .announcements()
-                    .list_next(request, response)
-                )
+                request = announcements.list_next(request, response)
         except Exception as exc:
             logger.warning(
                 "Failed to fetch announcements for course %s: %s",
@@ -142,9 +130,7 @@ class ClassroomAPIFetcher:
     # Course Work Materials
     # ------------------------------------------------------------------
 
-    def list_course_work_materials(
-        self, course_id: str
-    ) -> Iterator[Dict[str, Any]]:
+    def list_course_work_materials(self, course_id: str) -> Iterator[ClassroomObject]:
         """Yield courseWorkMaterial dicts for *course_id*.
 
         Args:
@@ -154,20 +140,13 @@ class ClassroomAPIFetcher:
             Raw courseWorkMaterial dict.
         """
         try:
-            request = (
-                self._service.courses()
-                .courseWorkMaterials()
-                .list(courseId=course_id, pageSize=100)
-            )
+            materials = self._service.courses().courseWorkMaterials()
+            request = materials.list(courseId=course_id, pageSize=100)
             while request is not None:
-                response = request.execute()
+                response = execute_with_retry(request)
                 for item in response.get("courseWorkMaterial", []):
                     yield item
-                request = (
-                    self._service.courses()
-                    .courseWorkMaterials()
-                    .list_next(request, response)
-                )
+                request = materials.list_next(request, response)
         except Exception as exc:
             logger.warning(
                 "Failed to fetch courseWorkMaterials for course %s: %s",
