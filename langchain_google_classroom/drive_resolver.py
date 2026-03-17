@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 GOOGLE_EXPORT_MIME_MAP: Dict[str, str] = {
-    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.document": (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ),
     "application/vnd.google-apps.presentation": "application/pdf",
     "application/vnd.google-apps.spreadsheet": "text/csv",
 }
