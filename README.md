@@ -5,9 +5,11 @@
 [![Python](https://img.shields.io/pypi/pyversions/langchain-google-classroom.svg)](https://pypi.org/project/langchain-google-classroom/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A **LangChain** integration package that loads Google Classroom content — assignments, announcements, course materials, and Drive attachments — as `Document` objects for RAG pipelines, semantic search, AI teaching assistants, and course chatbots.
+> Status: Community integration package (not officially listed by LangChain yet).
 
-Built for use with **LangChain Document Loaders**.
+A community package for loading Google Classroom content — assignments, announcements, course materials, and Drive attachments — as `Document` objects for RAG pipelines, semantic search, AI teaching assistants, and course chatbots.
+
+Compatible with **LangChain Document Loaders**.
 
 ## 🤔 What is this?
 
@@ -23,6 +25,7 @@ This package converts Classroom content into LangChain `Document` objects, makin
 
 - LangChain docs: https://docs.langchain.com/oss/python/langchain/overview
 - LangChain integrations overview: https://docs.langchain.com/oss/python/integrations/providers/overview
+- Contributing to LangChain docs: https://docs.langchain.com/oss/python/contributing/overview
 
 ## ✨ Features
 
@@ -98,11 +101,11 @@ vectorstore = FAISS.from_documents(chunks, OpenAIEmbeddings())
 
 Install optional dependencies for this example as needed (`langchain-text-splitters`, `langchain-openai`, `faiss-cpu`).
 
-## 🔐 Authentication
+## 🔐 Setup Credentials
 
-Google Classroom APIs require authentication. You can use either **OAuth 2.0 Client Secrets** (best for local testing / individual users) or a **Service Account** (best for automated CI/CD and production backend servers).
+Google Classroom APIs require authentication. Use one of the following methods:
 
-### 1. OAuth User Credentials (Recommended for developers/testing)
+### 1. OAuth User Credentials (Recommended)
 
 This is the easiest way to start. When you run this the first time, your browser will open asking you to log in with your Google Account, and it will generate a `token.json` for all future requests.
 
@@ -113,7 +116,7 @@ loader = GoogleClassroomLoader(
 )
 ```
 
-### 2. Service Account (Recommended for production/servers)
+### 2. Service Account
 
 Service accounts do not require human interaction. However, please note that Service Accounts act as "bot users" and cannot see your personal Google Classroom courses unless your Google Workspace Administrator explicitly grants them "Domain-Wide Delegation" for classroom scopes.
 
@@ -123,7 +126,7 @@ loader = GoogleClassroomLoader(
 )
 ```
 
-### Pre-built Credentials
+### 3. Pre-built Credentials Object
 
 ```python
 from google.oauth2 import service_account
@@ -134,6 +137,11 @@ creds = service_account.Credentials.from_service_account_file(
 )
 loader = GoogleClassroomLoader(credentials=creds)
 ```
+
+Credential safety:
+
+- Never commit `credentials.json`, `token.json`, or `service_account.json`.
+- Use GitHub Actions Secrets for CI integration tests.
 
 ## 📎 Attachments & File Parsing
 
