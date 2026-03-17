@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langchain_google_classroom.classroom_api import ClassroomAPIFetcher
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 
-def _make_fetcher() -> ClassroomAPIFetcher:
+@pytest.fixture
+def fetcher() -> tuple[ClassroomAPIFetcher, MagicMock]:
     """Create a fetcher with a mocked Google API service."""
     with patch(
         "langchain_google_classroom.classroom_api._import_googleapiclient_build"
@@ -23,9 +22,7 @@ def _make_fetcher() -> ClassroomAPIFetcher:
         mock_service = MagicMock()
         mock_build_fn.return_value = MagicMock(return_value=mock_service)
         fetcher = ClassroomAPIFetcher(credentials=MagicMock())
-        # Store mock service for test assertions
-        fetcher._mock_service = mock_service  # type: ignore[attr-defined]
-    return fetcher
+    return fetcher, mock_service
 
 
 # ---------------------------------------------------------------------------
@@ -36,23 +33,28 @@ def _make_fetcher() -> ClassroomAPIFetcher:
 class TestClassroomAPIFetcher:
     """Tests for ClassroomAPIFetcher."""
 
-    def test_list_courses_by_id(self) -> None:
+    def test_list_courses_by_id(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """When course_ids are provided, each is fetched via courses.get."""
-        fetcher = _make_fetcher()
+        fetcher_obj, mock_service = fetcher
         course_data = {"id": "123", "name": "Test Course"}
-        fetcher._mock_service.courses().get().execute.return_value = (  # type: ignore[attr-defined]
-            course_data
-        )
+        mock_courses = mock_service.courses.return_value
+        mock_courses.get.return_value.execute.return_value = course_data
 
-        courses = list(fetcher.list_courses(course_ids=["123"]))
+        courses = list(fetcher_obj.list_courses(course_ids=["123"]))
 
-        assert len(courses) == 1
-        assert courses[0]["id"] == "123"
+        assert courses == [course_data]
+        mock_courses.get.assert_called_once_with(id="123")
 
-    def test_list_courses_all(self) -> None:
+    def test_list_courses_all(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """When no course_ids, paginate via courses.list."""
-        fetcher = _make_fetcher()
-        mock_courses = fetcher._mock_service.courses()  # type: ignore[attr-defined]
+        fetcher_obj, mock_service = fetcher
+        mock_courses = mock_service.courses.return_value
 
         # Simulate a single page of results
         mock_courses.list.return_value.execute.return_value = {
@@ -63,16 +65,19 @@ class TestClassroomAPIFetcher:
         }
         mock_courses.list_next.return_value = None
 
-        courses = list(fetcher.list_courses())
+        courses = list(fetcher_obj.list_courses())
 
-        assert len(courses) == 2
-        assert courses[0]["id"] == "a"
-        assert courses[1]["id"] == "b"
+        assert [c["id"] for c in courses] == ["a", "b"]
+        mock_courses.list.assert_called_once_with(pageSize=100)
+        mock_courses.list_next.assert_called_once()
 
-    def test_list_course_work_pagination(self) -> None:
+    def test_list_course_work_pagination(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """Two pages of courseWork should both be yielded."""
-        fetcher = _make_fetcher()
-        mock_cw = fetcher._mock_service.courses().courseWork()  # type: ignore[attr-defined]
+        fetcher_obj, mock_service = fetcher
+        mock_cw = mock_service.courses.return_value.courseWork.return_value
 
         # Page 1
         page1_response = {
@@ -98,27 +103,31 @@ class TestClassroomAPIFetcher:
         mock_request_2.execute.return_value = page2_response
         mock_cw.list_next.side_effect = [mock_request_2, None]
 
-        items = list(fetcher.list_course_work("123"))
+        items = list(fetcher_obj.list_course_work("123"))
 
-        assert len(items) == 3
         assert [i["id"] for i in items] == ["cw1", "cw2", "cw3"]
+        mock_cw.list.assert_called_once_with(courseId="123", pageSize=100)
 
-    def test_list_course_work_error_handling(self) -> None:
+    def test_list_course_work_error_handling(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """Errors during courseWork fetch should be logged, not raised."""
-        fetcher = _make_fetcher()
-        mock_cw = fetcher._mock_service.courses().courseWork()  # type: ignore[attr-defined]
-        mock_cw.list.return_value.execute.side_effect = Exception(
-            "403 Forbidden"
-        )
+        fetcher_obj, mock_service = fetcher
+        mock_cw = mock_service.courses.return_value.courseWork.return_value
+        mock_cw.list.return_value.execute.side_effect = Exception("403 Forbidden")
 
         # Should not raise
-        items = list(fetcher.list_course_work("999"))
+        items = list(fetcher_obj.list_course_work("999"))
         assert items == []
 
-    def test_list_announcements(self) -> None:
+    def test_list_announcements(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """Announcements should be yielded from API response."""
-        fetcher = _make_fetcher()
-        mock_ann = fetcher._mock_service.courses().announcements()  # type: ignore[attr-defined]
+        fetcher_obj, mock_service = fetcher
+        mock_ann = mock_service.courses.return_value.announcements.return_value
 
         mock_ann.list.return_value.execute.return_value = {
             "announcements": [
@@ -127,15 +136,18 @@ class TestClassroomAPIFetcher:
         }
         mock_ann.list_next.return_value = None
 
-        items = list(fetcher.list_announcements("123"))
+        items = list(fetcher_obj.list_announcements("123"))
 
-        assert len(items) == 1
-        assert items[0]["text"] == "Hello"
+        assert items == [{"id": "a1", "text": "Hello"}]
+        mock_ann.list.assert_called_once_with(courseId="123", pageSize=100)
 
-    def test_list_course_work_materials(self) -> None:
+    def test_list_course_work_materials(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """Materials should be yielded from API response."""
-        fetcher = _make_fetcher()
-        mock_mat = fetcher._mock_service.courses().courseWorkMaterials()  # type: ignore[attr-defined]
+        fetcher_obj, mock_service = fetcher
+        mock_mat = mock_service.courses.return_value.courseWorkMaterials.return_value
 
         mock_mat.list.return_value.execute.return_value = {
             "courseWorkMaterial": [
@@ -144,17 +156,20 @@ class TestClassroomAPIFetcher:
         }
         mock_mat.list_next.return_value = None
 
-        items = list(fetcher.list_course_work_materials("123"))
+        items = list(fetcher_obj.list_course_work_materials("123"))
 
-        assert len(items) == 1
-        assert items[0]["title"] == "Slides"
+        assert items == [{"id": "m1", "title": "Slides"}]
+        mock_mat.list.assert_called_once_with(courseId="123", pageSize=100)
 
-    def test_list_courses_error_skipped(self) -> None:
+    def test_list_courses_error_skipped(
+        self,
+        fetcher: tuple[ClassroomAPIFetcher, MagicMock],
+    ) -> None:
         """A failing courses.get should log and skip, not crash."""
-        fetcher = _make_fetcher()
-        fetcher._mock_service.courses().get().execute.side_effect = (  # type: ignore[attr-defined]
-            Exception("Not found")
-        )
+        fetcher_obj, mock_service = fetcher
+        mock_courses = mock_service.courses.return_value
+        mock_courses.get.return_value.execute.side_effect = Exception("Not found")
 
-        courses = list(fetcher.list_courses(course_ids=["bad_id"]))
+        courses = list(fetcher_obj.list_courses(course_ids=["bad_id"]))
         assert courses == []
+        mock_courses.get.assert_called_once_with(id="bad_id")
