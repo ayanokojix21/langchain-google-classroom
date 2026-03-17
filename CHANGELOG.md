@@ -7,6 +7,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-03-17
+
+### Fixed
+- Re-released to update the `README.md` and force-refresh the PyPI cached rendering of the Python versions and Version badge.
+
+## [0.1.1] - 2026-03-17
+
+### Fixed
+- Resolved typing anomalies (`dict[str, str]` vs `TypedDict`) in the integration tests which were overlooked by the previously scoped `mypy` CI command.
+- Updated `.github/workflows/ci.yml` strictly type-check all tests utilizing `mypy .`.
+
 ## [0.1.0] - 2026-03-13
 
 ### Added
@@ -38,5 +49,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   (`[parsers]`, `[test]`, `[lint]`, `[typing]`, `[dev]`), PEP 561 `py.typed` marker.
 - **Comprehensive test coverage** across modules, including unit and integration tests.
 
-[Unreleased]: https://github.com/ayanokojix21/langchain-google-classroom/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ayanokojix21/langchain-google-classroom/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/ayanokojix21/langchain-google-classroom/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/ayanokojix21/langchain-google-classroom/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ayanokojix21/langchain-google-classroom/releases/tag/v0.1.0
