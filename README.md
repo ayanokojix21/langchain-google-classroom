@@ -1,8 +1,8 @@
 # 🎓 langchain-google-classroom
 
 [![CI](https://github.com/ayanokojix21/langchain-google-classroom/actions/workflows/ci.yml/badge.svg)](https://github.com/ayanokojix21/langchain-google-classroom/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/langchain-google-classroom.svg)](https://pypi.org/project/langchain-google-classroom/)
-[![Python](https://img.shields.io/pypi/pyversions/langchain-google-classroom.svg)](https://pypi.org/project/langchain-google-classroom/)
+[![PyPI version](https://img.shields.io/pypi/v/langchain-google-classroom.svg?cache=bust)](https://pypi.org/project/langchain-google-classroom/)
+[![Python](https://img.shields.io/pypi/pyversions/langchain-google-classroom.svg?cache=bust)](https://pypi.org/project/langchain-google-classroom/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > Status: Community integration package (not officially listed by LangChain yet).
