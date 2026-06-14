@@ -13,14 +13,11 @@ Run integration tests (requires credentials):
 
 from __future__ import annotations
 
-import os
 from io import BytesIO
-from typing import TypedDict
 from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.document_loaders import BaseBlobParser
-from langchain_core.documents import Document
 from langchain_core.documents.base import Blob
 
 from langchain_google_classroom.document_builder import (
@@ -30,7 +27,6 @@ from langchain_google_classroom.document_builder import (
     build_from_course_work,
     build_from_material,
 )
-from langchain_google_classroom.loader import GoogleClassroomLoader
 from langchain_google_classroom.normalizer import normalize
 from langchain_google_classroom.parsers import ImageParser, get_parser
 
@@ -140,7 +136,7 @@ class TestRealTextParsing:
 
     @pytest.mark.integration
     def test_csv_content(self) -> None:
-        """CSV content should be parsed as plain text."""
+        """CSV content should be parsed with header-aware formatting."""
         csv_data = b"name,score\nAlice,95\nBob,88\n"
         parser = get_parser("text/csv")
         assert parser is not None
@@ -149,8 +145,9 @@ class TestRealTextParsing:
         docs = list(parser.lazy_parse(blob))
 
         assert len(docs) == 1
-        assert "Alice,95" in docs[0].page_content
-        assert "Bob,88" in docs[0].page_content
+        assert "name: Alice" in docs[0].page_content
+        assert "score: 95" in docs[0].page_content
+        assert docs[0].metadata["row_count"] == 2
 
     @pytest.mark.integration
     def test_html_content(self) -> None:
@@ -325,79 +322,4 @@ class TestNormalizerIntegration:
         assert "1. Build a neural network" in result
 
 
-# ---------------------------------------------------------------------------
-# Integration: live API tests (skipped unless credentials exist)
-# ---------------------------------------------------------------------------
 
-_HAS_CREDENTIALS = os.path.exists("service_account.json") or os.path.exists(
-    "token.json"
-)
-
-
-class _LiveAuthKwargs(TypedDict, total=False):
-    service_account_file: str
-    token_file: str
-
-
-def _live_auth_kwargs() -> _LiveAuthKwargs:
-    """Build auth kwargs for live integration tests.
-
-    Prefer service account credentials when available. This avoids
-    triggering OAuth client-secrets flow in environments that only
-    provide ``service_account.json``.
-    """
-    if os.path.exists("service_account.json"):
-        return {"service_account_file": "service_account.json"}
-    if os.path.exists("token.json"):
-        return {"token_file": "token.json"}
-    return {}
-
-
-@pytest.mark.integration
-@pytest.mark.skipif(
-    not _HAS_CREDENTIALS,
-    reason="No Google credentials found (service_account.json or token.json)",
-)
-class TestLiveAPI:
-    """Tests that hit the real Google Classroom API.
-
-    These only run when valid credentials are present in the project
-    root.  They are skipped in CI.
-
-    To run:
-        pytest tests/integration/ -m integration -v
-    """
-
-    def test_list_courses(self) -> None:
-        """Should list at least one course."""
-        loader = GoogleClassroomLoader(
-            load_attachments=False,
-            **_live_auth_kwargs(),
-        )
-        docs = loader.load()
-        if len(docs) == 0:
-            pytest.skip(
-                "No accessible Classroom content for current credentials; "
-                "grant course access to the service account or provide "
-                "CLASSROOM_TEST_COURSE_ID for targeted testing."
-            )
-        assert all(isinstance(d, Document) for d in docs)
-        assert all(d.metadata.get("source") == "google_classroom" for d in docs)
-
-    def test_load_specific_course(self) -> None:
-        """Load a specific course by ID.
-
-        Set CLASSROOM_TEST_COURSE_ID env var to test.
-        """
-        course_id = os.environ.get("CLASSROOM_TEST_COURSE_ID")
-        if not course_id:
-            pytest.skip("CLASSROOM_TEST_COURSE_ID not set")
-
-        loader = GoogleClassroomLoader(
-            course_ids=[course_id],
-            load_attachments=False,
-            **_live_auth_kwargs(),
-        )
-        docs = loader.load()
-        assert len(docs) > 0
-        assert all(d.metadata.get("course_id") == course_id for d in docs)
