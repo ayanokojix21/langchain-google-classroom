@@ -184,7 +184,8 @@ class TestClassroomAPIFetcher:
     ) -> None:
         """Submissions should be yielded from API response."""
         fetcher_obj, mock_service = fetcher
-        mock_sub = mock_service.courses.return_value.courseWork.return_value.studentSubmissions.return_value
+        mock_cw = mock_service.courses.return_value.courseWork
+        mock_sub = mock_cw.return_value.studentSubmissions.return_value
         mock_sub.list.return_value.execute.return_value = {
             "studentSubmissions": [
                 {"id": "sub1", "state": "TURNED_IN"},
@@ -206,7 +207,8 @@ class TestClassroomAPIFetcher:
     ) -> None:
         """Passing a course_work_id should filter submissions."""
         fetcher_obj, mock_service = fetcher
-        mock_sub = mock_service.courses.return_value.courseWork.return_value.studentSubmissions.return_value
+        mock_cw = mock_service.courses.return_value.courseWork
+        mock_sub = mock_cw.return_value.studentSubmissions.return_value
         mock_sub.list.return_value.execute.return_value = {
             "studentSubmissions": [{"id": "sub1"}]
         }
@@ -223,7 +225,8 @@ class TestClassroomAPIFetcher:
     ) -> None:
         """Errors during submissions fetch should be logged, not raised."""
         fetcher_obj, mock_service = fetcher
-        mock_sub = mock_service.courses.return_value.courseWork.return_value.studentSubmissions.return_value
+        mock_cw = mock_service.courses.return_value.courseWork
+        mock_sub = mock_cw.return_value.studentSubmissions.return_value
         mock_sub.list.return_value.execute.side_effect = Exception("403")
         items = list(fetcher_obj.list_student_submissions("123"))
         assert items == []
@@ -238,7 +241,8 @@ class TestClassroomAPIFetcher:
     ) -> None:
         """Rubrics should be yielded from API response."""
         fetcher_obj, mock_service = fetcher
-        mock_rub = mock_service.courses.return_value.courseWork.return_value.rubrics.return_value
+        mock_cw = mock_service.courses.return_value.courseWork
+        mock_rub = mock_cw.return_value.rubrics.return_value
         mock_rub.list.return_value.execute.return_value = {
             "rubrics": [{"id": "r1", "criteria": []}]
         }
@@ -257,7 +261,8 @@ class TestClassroomAPIFetcher:
     ) -> None:
         """Errors during rubrics fetch should be logged, not raised."""
         fetcher_obj, mock_service = fetcher
-        mock_rub = mock_service.courses.return_value.courseWork.return_value.rubrics.return_value
+        mock_cw = mock_service.courses.return_value.courseWork
+        mock_rub = mock_cw.return_value.rubrics.return_value
         mock_rub.list.return_value.execute.side_effect = Exception("403")
         items = list(fetcher_obj.list_rubrics("123", "cw_001"))
         assert items == []
