@@ -320,6 +320,3 @@ class TestNormalizerIntegration:
         assert result.startswith("Assignment")
         assert result.endswith("Friday")
         assert "1. Build a neural network" in result
-
-
-
