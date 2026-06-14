@@ -141,7 +141,12 @@ _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 
 
-def execute_with_retry(request: Any, *, max_retries: int = _MAX_RETRIES) -> Any:
+def execute_with_retry(
+    request: Any,
+    *,
+    max_retries: int = _MAX_RETRIES,
+    base_delay: float = _BASE_DELAY,
+) -> Any:
     """Execute a Google API request with exponential backoff.
 
     Retries on HTTP 429 (rate limit), 500 (internal server error),
@@ -151,6 +156,7 @@ def execute_with_retry(request: Any, *, max_retries: int = _MAX_RETRIES) -> Any:
     Args:
         request: A ``googleapiclient`` HttpRequest object.
         max_retries: Maximum number of retry attempts.
+        base_delay: Base delay in seconds for exponential backoff.
 
     Returns:
         The API response dict.
@@ -172,7 +178,7 @@ def execute_with_retry(request: Any, *, max_retries: int = _MAX_RETRIES) -> Any:
                 raise
             last_error = exc
             if attempt < max_retries:
-                delay = _BASE_DELAY * (2**attempt) + random.uniform(0, 1)
+                delay = base_delay * (2**attempt) + random.uniform(0, 1)
                 logger.warning(
                     "API request failed (HTTP %s), retrying in %.1fs "
                     "(attempt %d/%d): %s",

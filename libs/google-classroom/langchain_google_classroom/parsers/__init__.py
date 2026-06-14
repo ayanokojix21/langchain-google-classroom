@@ -6,6 +6,7 @@ from typing import Dict, Optional, Type
 
 from langchain_core.document_loaders import BaseBlobParser
 
+from langchain_google_classroom.parsers.csv_parser import CSVParser
 from langchain_google_classroom.parsers.docx_parser import DocxParser
 from langchain_google_classroom.parsers.image_parser import ImageParser
 from langchain_google_classroom.parsers.pdf_parser import PDFParser
@@ -13,6 +14,7 @@ from langchain_google_classroom.parsers.text_parser import TextParser
 
 __all__ = [
     "BaseBlobParser",
+    "CSVParser",
     "DocxParser",
     "ImageParser",
     "PDFParser",
@@ -30,7 +32,7 @@ MIME_TYPE_PARSERS: Dict[str, Type[BaseBlobParser]] = {
     "application/pdf": PDFParser,
     _DOCX_MIME: DocxParser,
     "text/plain": TextParser,
-    "text/csv": TextParser,
+    "text/csv": CSVParser,
     "text/markdown": TextParser,
     "text/html": TextParser,
     "image/png": ImageParser,

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class TextParser(BaseBlobParser):
-    """Parse plain text, CSV, and HTML files.
+    """Parse plain text, markdown, and HTML files.
 
     Conforms to LangChain's :class:`BaseBlobParser` interface.
     """

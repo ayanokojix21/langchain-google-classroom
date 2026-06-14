@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-google-classroom"
-version = "0.1.2"
+version = "0.2.0"
 description = "An integration package connecting Google Classroom and LangChain"
 license = {text = "MIT"}
 readme = "README.md"
@@ -14,7 +14,8 @@ authors = [
 requires-python = ">=3.10.0,<4.0.0"
 
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
+    "Framework :: Pydantic :: 2",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
 
@@ -32,6 +33,7 @@ classifiers = [
 keywords = ["langchain", "google-classroom", "document-loader", "rag", "education"]
 dependencies = [
     "langchain-core>=0.3.0,<1.0.0",
+    "pydantic>=2.0.0,<3.0.0",
     "google-api-python-client>=2.100.0,<3.0.0",
     "google-auth>=2.25.0,<3.0.0",
     "google-auth-oauthlib>=1.2.0,<2.0.0",
@@ -40,7 +42,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/ayanokojix21/langchain-google-classroom"
-Source = "https://github.com/ayanokojix21/langchain-google-classroom"
+"Source Code" = "https://github.com/ayanokojix21/langchain-google-classroom/tree/main/libs/google-classroom"
+Repository = "https://github.com/ayanokojix21/langchain-google-classroom"
 Issues = "https://github.com/ayanokojix21/langchain-google-classroom/issues"
 Documentation = "https://github.com/ayanokojix21/langchain-google-classroom#readme"
 Changelog = "https://github.com/ayanokojix21/langchain-google-classroom/blob/main/CHANGELOG.md"
@@ -56,6 +59,7 @@ test = [
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-asyncio>=0.21.1,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
+    "langchain-tests>=0.3.0,<1.0.0",
 ]
 lint = [
     "ruff>=0.5.0,<1",
